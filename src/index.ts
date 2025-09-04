@@ -3,6 +3,7 @@ import { parse } from 'csv-parse';
 import nodemailer from 'nodemailer';
 import DataUtil from "./DataUtil";
 'use strict';
+import 'dotenv/config';
 
 // https://github.com/nodemailer/nodemailer/blob/master/examples/full.js
 
@@ -79,29 +80,19 @@ async function enviarEmail(destinatario: string, email: string, assunto: string,
 
     const nodemailer = require('nodemailer');
 
-    let account = await nodemailer.createAccount();
-
-    account.user = 'testetpiinodemailer';
-    account.pass = 'TesteNodemailer2025#';
-    account.smtp = { host: 'smtp.gmail.com', port: 465, secure: true };
-    account.port = 465;
-    account.secure = true;
-
-    console.log(account);
-
     const transporter = nodemailer.createTransport({
-        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
         auth: {
-            type: "OAuth2",
-            user: process.env.GOOGLE_USER,
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-        },
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        }
     });
 
     // Message object
     let message = {
+        from: process.env.EMAIL_USER,
         to: email,
         subject: assunto,
         html: corpo,
