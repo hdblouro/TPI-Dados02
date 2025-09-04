@@ -59,12 +59,13 @@ async function main() {
                     htmlemail += linha.replace('{{percdesc}}', idade(dados.Nasc).toString()) + '\n';
                 } else if (linha.indexOf('{{mesquevem}}') >= 0) {
                     let hoje: Date = new Date();
-                    htmlemail += linha.replace('{{mesquevem}}', "("+DataUtil.mesExtenso(hoje.getMonth() + 2) + "/" + hoje.getFullYear() + ").\n");
+                    htmlemail += linha.replace('{{mesquevem}}', "(" + DataUtil.mesExtenso(hoje.getMonth() + 2) + "/" + hoje.getFullYear() + ").\n");
                 } else {
                     htmlemail += linha + '\n';
                 }
             }
-            console.log(htmlemail);
+            //            console.log(htmlemail);
+            enviarEmail(dados.Nome, dados.Email, "Oferta especial para você", htmlemail);
         })
 
     } catch (erro) {
@@ -73,65 +74,54 @@ async function main() {
 
 }
 
-async function enviarEmail(destinatario: string, email: string, assunto: string, corpo: string ) {
-    // Create a SMTP transporter object
-    let transporter = nodemailer.createTransport({
-        // Use the 'sendmail' transport
-        // You can adjust the path if your sendmail binary is elsewhere
-        sendmail: true,
-        newline: 'windows'
+async function enviarEmail(destinatario: string, email: string, assunto: string, corpo: string) {
+    /* eslint no-console: 0 */
+
+    const nodemailer = require('nodemailer');
+
+    let account = await nodemailer.createAccount();
+
+    account.user = 'testetpiinodemailer';
+    account.pass = 'TesteNodemailer2025#';
+    account.smtp = { host: 'smtp.gmail.com', port: 465, secure: true };
+    account.port = 465;
+    account.secure = true;
+
+    console.log(account);
+
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            type: "OAuth2",
+            user: process.env.GOOGLE_USER,
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+        },
     });
 
     // Message object
     let message = {
-        from: 'Henrique Louro',
-
-        // Comma separated list of recipients
-        to: destinatario+"<"+email+">",
-//        bcc: 'fulano@gmail.com',
-
-        // Subject of the message
+        to: email,
         subject: assunto,
-
-//        // plaintext body
-//        text: corpo,
-
-        // HTML body
-        html: corpo,        // An array of attachments
-
-        attachments: [
-/*            // String attachment
-            {
-                filename: 'notes.txt',
-                content: 'Some notes about this e-mail',
-                contentType: 'text/plain' // optional, would be detected from the filename
-            },
-
-            // Binary Buffer attachment
-            {
-                filename: 'image.png',
-                content: Buffer.from(
-                    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAQMAAAAlPW0iAAAABlBMVEUAAAD/' +
-                    '//+l2Z/dAAAAM0lEQVR4nGP4/5/h/1+G/58ZDrAz3D/McH8yw83NDDeNGe4U' +
-                    'g9C9zwz3gVLMDA/A6P9/AFGGFyjOXZtQAAAAAElFTkSuQmCC',
-                    'base64'
-                ),
-
-                cid: 'note@example.com' // should be as unique as possible
-            },
-*/
-            // File Stream attachment
-            {
-                filename: 'nyan cat ✔.gif',
-                path: __dirname + '/assets/nyan.gif',
-                cid: 'nyan@example.com' // should be as unique as possible
-            }
-        ]
+        html: corpo,
     };
 
-    let info = await transporter.sendMail(message);
-    console.log('Message sent successfully as %s', info.messageId);
-}
+    transporter.sendMail(message, (error: any, info: any) => {
+        if (error) {
+            console.log('Error occurred');
+            console.log(error.message);
+            return process.exit(1);
+        }
+
+        console.log('Message sent successfully!');
+        console.log(nodemailer.getTestMessageUrl(info));
+
+        // only needed when using pooled connections
+        transporter.close();
+    });
+};
+
 
 function idade(nasc: any): number {
     const hoje = new Date();
